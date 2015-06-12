@@ -62,6 +62,7 @@ merged_comments = find_issue_comments(db, owner, repo, merged_ids)
 unmerge_comments = find_issue_comments(db, owner, repo, unmerged_ids)
 all_comments = [merged_comments, unmerge_comments]
 
+
 # dump issue comments
 dirs = ['merge', 'unmerge']
 dirs = [os.path.join(DATA_DIR, d) for d in dirs]
