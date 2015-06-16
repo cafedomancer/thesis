@@ -2,8 +2,8 @@ import numpy as np
 import pymongo
 import re
 from pprint import pprint
-from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+from sklearn.grid_search import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
@@ -56,20 +56,24 @@ u_titles = [tag.sub('', t) for t in u_titles]
 # train logistic regression model
 pipeline = Pipeline([
     ('vect', TfidfVectorizer(stop_words='english')),
-    ('clf', LogisticRegression())
+    ('clf', MultinomialNB())
 ])
 
+parameters = {
+    # 'vect__ngram_range': ((1, 1), (1, 2), (1, 3)),
+    # 'vect__norm': ('l1', 'l2'),
+    # 'vect__use_idf': (True, False),
+    'vect__binary': (True, False),
+    # 'vect__smooth_idf': (True, False),
+}
+
 X = m_titles + u_titles
-y = ['merge' for _ in range(len(m_titles))] + ['unmerge' for _ in range(len(u_titles))]
+y = [1 for _ in range(len(m_titles))] + [0 for _ in range(len(u_titles))]
 
 X = np.asarray(X)
 y = np.asarray(y)
 
-cv = KFold(n=len(X), n_folds=5, shuffle=True)
-
-for train, test in cv:
-    X_train, y_train = X[train], y[train]
-    X_test, y_test = X[test], y[test]
-
-    pipeline.fit(X_train, y_train)
-    print(pipeline.score(X_test, y_test))
+grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
+grid_search.fit(X, y)
+for grid_score in grid_search.grid_scores_:
+    print(grid_score)
