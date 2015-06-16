@@ -2,6 +2,7 @@ import numpy as np
 import pymongo
 import re
 from pprint import pprint
+from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.grid_search import GridSearchCV
 from sklearn.linear_model import LogisticRegression
@@ -53,7 +54,42 @@ m_titles = [tag.sub('', t) for t in m_titles]
 u_titles = [tag.sub('', t) for t in u_titles]
 
 
-# train logistic regression model
+# prepare numpy arrays
+X_orig = m_titles + u_titles
+y_orig = ['merge' for _ in range(len(m_titles))] + ['unmerge' for _ in range(len(u_titles))]
+
+X = np.asarray(X_orig)
+y = np.asarray(y_orig)
+
+
+# transform documents to tfidf vectors
+vect = TfidfVectorizer(stop_words='english')
+X_trans = vect.fit_transform(X)
+
+
+# train naive bayes model with K-Fold
+kf = KFold(n=len(X), n_folds=5, shuffle=True)
+
+scores = []
+
+for train_index, test_index in kf:
+    X_train, X_test = X_trans[train_index], X_trans[test_index]
+    y_train, y_test = y[train_index], y[test_index]
+
+    clf = MultinomialNB()
+    clf.fit(X_train, y_train)
+
+    train_score = clf.score(X_train, y_train)
+    test_score = clf.score(X_test, y_test)
+    print('train:', train_score, 'test:', test_score)
+
+    scores.append(test_score)
+
+print('MEAN:', np.mean(scores), 'STDDEV:', np.std(scores))
+
+
+'''
+# train naive bayes model
 pipeline = Pipeline([
     ('vect', TfidfVectorizer(stop_words='english')),
     ('clf', MultinomialNB())
@@ -67,13 +103,9 @@ parameters = {
     # 'vect__smooth_idf': (True, False),
 }
 
-X = m_titles + u_titles
-y = [1 for _ in range(len(m_titles))] + [0 for _ in range(len(u_titles))]
-
-X = np.asarray(X)
-y = np.asarray(y)
 
 grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
 grid_search.fit(X, y)
 for grid_score in grid_search.grid_scores_:
     print(grid_score)
+'''
