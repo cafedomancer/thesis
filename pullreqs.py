@@ -47,7 +47,7 @@ m_titles = [p['title'] for p in m_pulls]
 u_titles = [p['title'] for p in u_pulls]
 
 
-# remove suqare bracket tags
+# remove square bracket tags
 tag = re.compile('(^\[(.*?)\]|\[(.*?)\]$)', re.MULTILINE | re.DOTALL)
 m_titles = [tag.sub('', t) for t in m_titles]
 u_titles = [tag.sub('', t) for t in u_titles]
