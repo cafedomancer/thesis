@@ -30,6 +30,24 @@ def find_pull_requests(db, owner, repo, is_merged=True):
     # return list(db.pull_requests.find(query))
 
 
+def plot_roc(auc_score, name, tpr, fpr, label=None):
+    pylab.clf()
+    pylab.figure(num=None, figsize=(5, 4))
+    pylab.grid(True)
+    pylab.plot([0, 1], [0, 1], 'k--')
+    pylab.plot(fpr, tpr)
+    pylab.fill_between(fpr, tpr, alpha=0.5)
+    pylab.xlim([0.0, 1.0])
+    pylab.ylim([0.0, 1.0])
+    pylab.xlabel('False Positive Rate')
+    pylab.ylabel('True Positive Rate')
+    pylab.title('ROC curve (AUC = %0.2f) / %s' %
+                (auc_score, label), verticalalignment="bottom")
+    pylab.legend(loc="lower right")
+    filename = name.replace(" ", "_")
+    pylab.savefig("charts/roc_" + filename + ".png", bbox_inches="tight")
+
+
 def plot_pr(auc_score, name, phase, precision, recall, label=None):
     pylab.clf()
     pylab.figure(num=None, figsize=(5, 4))
@@ -94,6 +112,9 @@ scores = []
 pr_scores = []
 precisions, recalls, thresholds = [], [], []
 
+roc_scores = []
+fprs, tprs = [], []
+
 for train_index, test_index in kf:
     X_train, X_test = X_trans[train_index], X_trans[test_index]
     y_train, y_test = y[train_index], y[test_index]
@@ -113,6 +134,10 @@ for train_index, test_index in kf:
     fpr, tpr, roc_thresholds = roc_curve(y_test, proba[:, 1])
     precision, recall, pr_thresholds = precision_recall_curve(y_test, proba[:, 1])
 
+    roc_scores.append(auc(fpr, tpr))
+    fprs.append(fpr)
+    tprs.append(tpr)
+
     pr_scores.append(auc(recall, precision))
     precisions.append(precision)
     recalls.append(recall)
@@ -120,8 +145,11 @@ for train_index, test_index in kf:
 
 scores_to_sort = pr_scores
 median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
-
 plot_pr(pr_scores[median], name, phase, precisions[median], recalls[median], label=name)
+
+scores_to_sort = roc_scores
+median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
+plot_roc(roc_scores[median], name, tprs[median], fprs[median], label=name)
 
 print('MEAN:', np.mean(scores), 'STDDEV:', np.std(scores))
 
