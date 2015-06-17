@@ -2,10 +2,12 @@ import numpy as np
 import pymongo
 import re
 from pprint import pprint
+from matplotlib import pylab
 from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.grid_search import GridSearchCV
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_recall_curve, roc_curve, auc
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.pipeline import Pipeline
 
@@ -26,6 +28,21 @@ def find_pull_requests(db, owner, repo, is_merged=True):
 
     return db.pull_requests.find(query)
     # return list(db.pull_requests.find(query))
+
+
+def plot_pr(auc_score, name, phase, precision, recall, label=None):
+    pylab.clf()
+    pylab.figure(num=None, figsize=(5, 4))
+    pylab.grid(True)
+    pylab.fill_between(recall, precision, alpha=0.5)
+    pylab.plot(recall, precision, lw=1)
+    pylab.xlim([0.0, 1.0])
+    pylab.ylim([0.0, 1.0])
+    pylab.xlabel('Recall')
+    pylab.ylabel('Precision')
+    pylab.title('P/R curve (AUC=%0.2f) / %s' % (auc_score, label))
+    filename = name.replace(" ", "_")
+    pylab.savefig('charts/pr_%s_%s.png' % (filename, phase), bbox_inches="tight")
 
 
 # prepare database connection
@@ -57,20 +74,25 @@ u_titles = [tag.sub('', t) for t in u_titles]
 # prepare numpy arrays
 X_orig = m_titles + u_titles
 y_orig = ['merge' for _ in range(len(m_titles))] + ['unmerge' for _ in range(len(u_titles))]
+y_orig = [1 for _ in range(len(m_titles))] + [0 for _ in range(len(u_titles))]
 
 X = np.asarray(X_orig)
 y = np.asarray(y_orig)
 
 
 # transform documents to tfidf vectors
-vect = TfidfVectorizer(stop_words='english')
+vect = TfidfVectorizer(ngram_range=(1, 3), stop_words='english')
 X_trans = vect.fit_transform(X)
 
 
 # train naive bayes model with K-Fold
 kf = KFold(n=len(X), n_folds=5, shuffle=True)
 
+name = 'NB ngram'
+phase = '01'
 scores = []
+pr_scores = []
+precisions, recalls, thresholds = [], [], []
 
 for train_index, test_index in kf:
     X_train, X_test = X_trans[train_index], X_trans[test_index]
@@ -84,6 +106,22 @@ for train_index, test_index in kf:
     print('train:', train_score, 'test:', test_score)
 
     scores.append(test_score)
+
+    # for plotting precision recall curve
+    proba = clf.predict_proba(X_test)
+
+    fpr, tpr, roc_thresholds = roc_curve(y_test, proba[:, 1])
+    precision, recall, pr_thresholds = precision_recall_curve(y_test, proba[:, 1])
+
+    pr_scores.append(auc(recall, precision))
+    precisions.append(precision)
+    recalls.append(recall)
+    thresholds.append(pr_thresholds)
+
+scores_to_sort = pr_scores
+median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
+
+plot_pr(pr_scores[median], name, phase, precisions[median], recalls[median], label=name)
 
 print('MEAN:', np.mean(scores), 'STDDEV:', np.std(scores))
 
