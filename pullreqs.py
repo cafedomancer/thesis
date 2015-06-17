@@ -5,7 +5,6 @@ from pprint import pprint
 from matplotlib import pylab
 from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
-from sklearn.grid_search import GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import precision_recall_curve, roc_curve, auc
 from sklearn.naive_bayes import MultinomialNB
@@ -88,7 +87,29 @@ tag = re.compile('(^\[(.*?)\]|\[(.*?)\]$)', re.MULTILINE | re.DOTALL)
 m_titles = [tag.sub('', t) for t in m_titles]
 u_titles = [tag.sub('', t) for t in u_titles]
 
+# remove URLs
+# url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', re.MULTILINE | re.DOTALL)
+# m_titles = [url.sub('', t) for t in m_titles]
+# u_titles = [url.sub('', t) for t in u_titles]
 
+
+# create topic model
+from gensim import corpora, models, similarities
+vectorizer = CountVectorizer(stop_words='english')
+analyzer = vectorizer.build_analyzer()
+
+m_titles = [analyzer(t) for t in m_titles]
+u_titles = [analyzer(t) for t in u_titles]
+
+dictionary = corpora.Dictionary(m_titles)
+corpus = [dictionary.doc2bow(t) for t in u_titles]
+tfidf = models.TfidfModel(corpus)
+model = models.hdpmodel.HdpModel(corpus, id2word=dictionary)
+
+pprint(model.show_topics(formatted=False))
+
+
+'''
 # prepare numpy arrays
 X_orig = m_titles + u_titles
 y_orig = ['merge' for _ in range(len(m_titles))] + ['unmerge' for _ in range(len(u_titles))]
@@ -96,6 +117,14 @@ y_orig = [1 for _ in range(len(m_titles))] + [0 for _ in range(len(u_titles))]
 
 X = np.asarray(X_orig)
 y = np.asarray(y_orig)
+
+
+# count ngram frequency
+vect = CountVectorizer(ngram_range=(2, 2), stop_words='english')
+#trans = vect.fit_transform(m_titles)
+trans = vect.fit_transform(u_titles)
+freq = [(t, trans[:, i].sum()) for t, i in vect.vocabulary_.items()]
+pprint(sorted(freq, key=lambda x: x[1], reverse=True)[:50])
 
 
 # transform documents to tfidf vectors
@@ -143,35 +172,13 @@ for train_index, test_index in kf:
     recalls.append(recall)
     thresholds.append(pr_thresholds)
 
-scores_to_sort = pr_scores
-median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
-plot_pr(pr_scores[median], name, phase, precisions[median], recalls[median], label=name)
-
-scores_to_sort = roc_scores
-median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
-plot_roc(roc_scores[median], name, tprs[median], fprs[median], label=name)
-
 print('MEAN:', np.mean(scores), 'STDDEV:', np.std(scores))
 
+# scores_to_sort = pr_scores
+# median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
+# plot_pr(pr_scores[median], name, phase, precisions[median], recalls[median], label=name)
 
-'''
-# train naive bayes model
-pipeline = Pipeline([
-    ('vect', TfidfVectorizer(stop_words='english')),
-    ('clf', MultinomialNB())
-])
-
-parameters = {
-    # 'vect__ngram_range': ((1, 1), (1, 2), (1, 3)),
-    # 'vect__norm': ('l1', 'l2'),
-    # 'vect__use_idf': (True, False),
-    'vect__binary': (True, False),
-    # 'vect__smooth_idf': (True, False),
-}
-
-
-grid_search = GridSearchCV(pipeline, parameters, n_jobs=-1, verbose=1)
-grid_search.fit(X, y)
-for grid_score in grid_search.grid_scores_:
-    print(grid_score)
+# scores_to_sort = roc_scores
+# median = np.argsort(scores_to_sort)[len(scores_to_sort) / 2]
+# plot_roc(roc_scores[median], name, tprs[median], fprs[median], label=name)
 '''
