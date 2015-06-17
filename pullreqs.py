@@ -102,7 +102,7 @@ m_titles = [analyzer(t) for t in m_titles]
 u_titles = [analyzer(t) for t in u_titles]
 
 dictionary = corpora.Dictionary(m_titles)
-corpus = [dictionary.doc2bow(t) for t in u_titles]
+corpus = [dictionary.doc2bow(t) for t in m_titles]
 tfidf = models.TfidfModel(corpus)
 model = models.hdpmodel.HdpModel(corpus, id2word=dictionary)
 
