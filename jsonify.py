@@ -59,7 +59,6 @@ if __name__ == '__main__':
     client = pymongo.MongoClient('localhost', 27017)
     db = client.msr14
 
-
     # split full name into owner and repo
     full_name = 'rails/rails'
     owner, repo = full_name.split('/')
