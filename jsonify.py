@@ -2,40 +2,7 @@ import bson.json_util
 import os
 import pymongo
 
-from utils import DATA_DIR
-
-
-def find_pull_requests(db, owner=None, repo=None, is_merged=True):
-    query = {'$and': [
-        {'closed_at': {'$ne': None}}
-    ]}
-
-    if owner and repo:
-        query['$and'].append({'owner': owner})
-        query['$and'].append({'repo': repo})
-
-    if is_merged:
-        query['$and'].append({'merged_at': {'$ne': None}})
-    else:
-        query['$and'].append({'merged_at': None})
-
-    return db.pull_requests.find(query)
-
-
-def find_issue_comments(db, owner, repo, issue_ids):
-    query = {'$and': [
-        {'issue_id': None},
-        {'owner': owner},
-        {'repo': repo}
-    ]}
-
-    comments = []
-
-    for ii in issue_ids:
-        query['$and'][0].update({'issue_id': ii})
-        comments += db.issue_comments.find(query)
-
-    return comments
+from utils import DATA_DIR, find_pull_requests, find_issue_comments
 
 
 def jsonify_issue_comments(db, owner, repo, is_merged=True):
