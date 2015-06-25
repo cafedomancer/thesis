@@ -36,9 +36,6 @@ for t in titles:
 # remove words that only appear once
 titles = [[w for w in t if usage[w] > 1] for t in titles]
 
-print(len(titles))
-print(sum(len(t) for t in titles))
-
 # create topic model
 dictionary = corpora.Dictionary(titles)
 corpus = [dictionary.doc2bow(t) for t in titles]
