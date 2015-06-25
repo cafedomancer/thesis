@@ -3,7 +3,7 @@ import re
 from sklearn.feature_extraction.text import CountVectorizer
 
 
-def analyze_title(title):
+def clean_title(title):
     tag = re.compile(r'\[(.*?)\]', re.MULTILINE | re.DOTALL)
     title = tag.sub('', title)
 
@@ -13,10 +13,14 @@ def analyze_title(title):
     code = re.compile(r'\w+::\w+(?:::\w+)*(?:\.\w+\??|#\w+\??)?', re.MULTILINE | re.DOTALL)
     title = code.sub('', title)
 
+    return title
+
+
+def analyze_title(title):
     vectorizer = CountVectorizer(stop_words='english')
     analyzer = vectorizer.build_analyzer()
 
-    title = analyzer(title)
+    title = analyzer(clean_title(title))
 
     title = list(filter(lambda s: not '_' in s, title))
     body = list(filter(lambda s: not any(c.isdigit() for c in s), title))
@@ -24,7 +28,7 @@ def analyze_title(title):
     return title
 
 
-def analyze_body(body):
+def clean_body(body):
     block = re.compile(r'```.*?```|<pre>.*?</pre>|^(?: {4,}|\t+).*?$', re.MULTILINE | re.DOTALL)
     body = block.sub('', body)
 
@@ -43,10 +47,12 @@ def analyze_body(body):
     ruby = re.compile(r'(?:\w+/)*\w*\.rb', re.MULTILINE | re.DOTALL)
     body = ruby.sub('', body)
 
+
+def analyze_body(body):
     vectorizer = CountVectorizer(stop_words='english')
     analyzer = vectorizer.build_analyzer()
 
-    body = analyzer(body)
+    body = analyzer(clean_body(body))
 
     body = list(filter(lambda s: not '_' in s, body))
     body = list(filter(lambda s: not any(c.isdigit() for c in s), body))
