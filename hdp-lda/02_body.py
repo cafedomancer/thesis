@@ -1,3 +1,4 @@
+import os
 import pymongo
 import sys
 
@@ -6,7 +7,7 @@ from gensim import corpora, models, similarities
 from operator import itemgetter
 from pprint import pprint
 
-sys.path.append('..')
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from features import analyze_body
 from utils import find_pull_requests
@@ -39,6 +40,12 @@ for b in bodies:
 # remove words that only appear once
 bodies = [[w for w in b if usage[w] > 1] for b in bodies]
 
+# cut off common words
+limit = len(bodies) / 10
+common = [w for w in usage if usage[w] > limit]
+common = set(common)
+bodies = [filter(lambda w: w not in common, b) for b in bodies]
+
 # create topic model
 dictionary = corpora.Dictionary(bodies)
 corpus = [dictionary.doc2bow(t) for t in bodies]
@@ -51,11 +58,3 @@ for topic in model.show_topics(topics=10, topn=10, formatted=False):
     topic = list(map(itemgetter(0), topic))
     topic = ' '.join(topic)
     print(topic)
-
-'''
-# cut off common words
-limit = len(bodies) / 10
-common = [w for w in usage if usage[w] > limit]
-common = set(common)
-bodies = [filter(lambda w: w not in common, b) for b in bodies]
-'''

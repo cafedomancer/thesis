@@ -6,7 +6,7 @@ from gensim import corpora, models, similarities
 from operator import itemgetter
 from pprint import pprint
 
-sys.path.append('..')
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from features import analyze_title
 from utils import find_pull_requests
