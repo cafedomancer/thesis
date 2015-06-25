@@ -47,6 +47,8 @@ def clean_body(body):
     ruby = re.compile(r'(?:\w+/)*\w*\.rb', re.MULTILINE | re.DOTALL)
     body = ruby.sub('', body)
 
+    return body
+
 
 def analyze_body(body):
     vectorizer = CountVectorizer(stop_words='english')
