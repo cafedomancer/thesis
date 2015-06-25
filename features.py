@@ -25,7 +25,7 @@ def analyze_title(title):
 
 
 def analyze_body(body):
-    block = re.compile(r'```.*?```|<pre>.*?</pre>', re.MULTILINE | re.DOTALL)
+    block = re.compile(r'```.*?```|<pre>.*?</pre>|^(?: {4,}|\t+).*?$', re.MULTILINE | re.DOTALL)
     body = block.sub('', body)
 
     inline = re.compile(r'`.*?`', re.MULTILINE | re.DOTALL)
@@ -37,30 +37,19 @@ def analyze_body(body):
     url = re.compile(r'\(?https?://\S+\)?', re.MULTILINE | re.DOTALL)
     body = url.sub('', body)
 
-    '''
-    tag = re.compile(r'\[(.*?)\]', re.MULTILINE | re.DOTALL)
-    body = tag.sub('', body)
-
-    code = re.compile(r'\w*::\w*[.#]*\w*\.?\(?\w*\)?\??', re.MULTILINE | re.DOTALL)
+    code = re.compile(r'(?:[A-Z][a-z]*){2,}(?:::(?:[A-Z][a-z]*)+)*(?:\.|#\S+)*', re.MULTILINE | re.DOTALL)
     body = code.sub('', body)
 
-    code = re.compile(r'\w*#\w*', re.MULTILINE | re.DOTALL)
-    body = code.sub('', body)
+    ruby = re.compile(r'(?:\w+/)*\w*\.rb', re.MULTILINE | re.DOTALL)
+    body = ruby.sub('', body)
 
-    issue = re.compile(r'#[0-9]+', re.MULTILINE | re.DOTALL)
-    body = issue.sub('', body)
-
-    url = re.compile('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', re.MULTILINE | re.DOTALL)
-    body = url.sub('', body)
-    '''
-
-    vectorizer = CountVectorizer(ngram_range=(2, 2), stop_words='english')
+    vectorizer = CountVectorizer(stop_words='english')
     analyzer = vectorizer.build_analyzer()
 
-    # body = analyzer(body)
+    body = analyzer(body)
 
-    # body = list(filter(lambda s: not '_' in s, body))
-    # body = list(filter(lambda s: not s.isdigit(), body))
+    body = list(filter(lambda s: not '_' in s, body))
+    body = list(filter(lambda s: not s.isdigit(), body))
 
     return body
 
@@ -95,19 +84,13 @@ if __name__ == '__main__':
 
     bodies = [p['body'] for p in pullreqs]
     bodies = list(filter(bool, bodies))
-    #bodies = list(map(analyze_body, bodies))
-    #for b in bodies:
-    #    for w in b:
-    #        usage[w] += 1
-
+    bodies = list(map(analyze_body, bodies))
     for b in bodies:
-        if 'ActiveRecord' in analyze_body(b):
-            print(b)
-            print('='*204)
-            print(analyze_body(b))
-            print('-'*204)
+        for w in b:
+            usage[w] += 1
 
-    #pprint(sorted(usage.items(), key=itemgetter(1), reverse=True))
+    pprint(sorted(usage.items(), key=itemgetter(1), reverse=True))
+
 
 
 
