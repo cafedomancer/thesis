@@ -19,7 +19,7 @@ def analyze_title(title):
     title = analyzer(title)
 
     title = list(filter(lambda s: not '_' in s, title))
-    title = list(filter(lambda s: not s.isdigit(), title))
+    body = list(filter(lambda s: not any(c.isdigit() for c in s), title))
 
     return title
 
@@ -49,7 +49,7 @@ def analyze_body(body):
     body = analyzer(body)
 
     body = list(filter(lambda s: not '_' in s, body))
-    body = list(filter(lambda s: not s.isdigit(), body))
+    body = list(filter(lambda s: not any(c.isdigit() for c in s), body))
 
     return body
 
