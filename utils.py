@@ -1,3 +1,5 @@
+import bson.json_util
+import glob
 import json
 import os
 
@@ -52,6 +54,25 @@ def find_issue_comments(db, owner, repo, issue_ids):
     return comments
 
 
+def load_issue_comments(is_merged=True):
+    if is_merged:
+        dirname = os.path.join(DATA_DIR, 'merge')
+    else:
+        dirname = os.path.join(DATA_DIR, 'unmerged')
+
+    filenames = glob.glob('{}/*.json'.format(dirname))
+
+    comments = []
+
+    for fn in filenames:
+        with open(fn) as f:
+            comment = bson.json_util.loads(f.read())
+            comment = comment['body']
+            comments.append(comment)
+
+    return comments
+
+
 if __name__ == '__main__':
     import pymongo
 
@@ -66,4 +87,7 @@ if __name__ == '__main__':
 
     pullreq_ids = [p['number'] for p in pullreqs]
     comments = find_issue_comments(db, owner, repo, pullreq_ids)
+    print(len(comments))
+
+    comments = load_issue_comments(is_merged=True)
     print(len(comments))
