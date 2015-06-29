@@ -58,7 +58,7 @@ def load_issue_comments(is_merged=True):
     if is_merged:
         dirname = os.path.join(DATA_DIR, 'merge')
     else:
-        dirname = os.path.join(DATA_DIR, 'unmerged')
+        dirname = os.path.join(DATA_DIR, 'unmerge')
 
     filenames = glob.glob('{}/*.json'.format(dirname))
 
