@@ -51,6 +51,9 @@ X_trans = vect.fit_transform(X)
 # train naive bayes model with K-Fold
 kf = KFold(n=len(X), n_folds=5, shuffle=True)
 
+train_scores = []
+test_scores = []
+
 for train, test in kf:
     X_train, X_test = X_trans[train], X_trans[test]
     y_train, y_test = y[train], y[test]
@@ -60,4 +63,10 @@ for train, test in kf:
 
     train_score = clf.score(X_train, y_train)
     test_score = clf.score(X_test, y_test)
-    print('TRAIN: {:f}, TEST: {:f}'.format(train_score, test_score))
+
+    train_scores.append(train_score)
+    test_scores.append(test_score)
+
+print('         MEAN     STDDEV')
+print('TRAIN: {:f}, {:f}'.format(np.mean(train_scores), np.std(train_scores)))
+print('TEST : {:f}, {:f}'.format(np.mean(test_scores), np.std(test_scores)))
