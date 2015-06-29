@@ -48,7 +48,7 @@ bodies = [filter(lambda w: w not in common, b) for b in bodies]
 
 # create topic model
 dictionary = corpora.Dictionary(bodies)
-corpus = [dictionary.doc2bow(t) for t in bodies]
+corpus = [dictionary.doc2bow(b) for b in bodies]
 model = models.hdpmodel.HdpModel(corpus, id2word=dictionary)
 
 # print topics
