@@ -24,7 +24,7 @@ def analyze_title(title):
     title = analyzer(clean_title(title))
 
     title = list(filter(lambda s: not '_' in s, title))
-    body = list(filter(lambda s: not any(c.isdigit() for c in s), title))
+    title = list(filter(lambda s: not any(c.isdigit() for c in s), title))
 
     return title
 
