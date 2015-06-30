@@ -10,7 +10,9 @@ from operator import itemgetter
 from pprint import pprint
 from sklearn.cross_validation import KFold
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sknn.mlp import Classifier, Layer
+from sklearn.naive_bayes import MultinomialNB
+
+sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 from features import clean_body
 from utils import find_pull_requests
@@ -47,7 +49,12 @@ X = np.asarray(X_orig)
 y = np.asarray(y_orig)
 
 # transform documents to tfidf vectors
-vect = TfidfVectorizer(stop_words='english')
+class MyTfidfVectorizer(TfidfVectorizer):
+    def build_analyzer(self):
+        analyzer = super(TfidfVectorizer, self).build_analyzer()
+        return lambda doc: filter(lambda s: not any(c.isdigit() for c in s), filter(lambda s: not '_' in s, (w for w in analyzer(doc))))
+
+vect = MyTfidfVectorizer(stop_words='english')
 X_trans = vect.fit_transform(X)
 
 # train naive bayes model with K-Fold
@@ -57,17 +64,11 @@ for train, test in kf:
     X_train, X_test = X_trans[train], X_trans[test]
     y_train, y_test = y[train], y[test]
 
-    clf = Classifier(
-        layers=[
-            Layer("Maxout", units=100, pieces=2),
-            Layer("Softmax", units=2)
-        ],
-        learning_rate=0.001,
-        batch_size=5,
-        n_iter=10,
-        verbose=True)
+    clf = MultinomialNB()
     clf.fit(X_train, y_train)
 
-    train_score = clf.score(X_train, y_train)
-    test_score = clf.score(X_test, y_test)
-    print('TRAIN: {:f}, TEST: {:f}'.format(train_score, test_score))
+n = 20
+coefs_feats = sorted(zip(clf.coef_[0], vect.get_feature_names()))
+top = list(zip(coefs_feats[:n], coefs_feats[:-(n + 1):-1]))
+for (c1, f1), (c2, f2) in top:
+    print("\t%.4f\t%-15s\t\t%.4f\t%-15s" % (c1, f1, c2, f2))
