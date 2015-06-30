@@ -18,6 +18,13 @@ from features import clean_body
 from utils import find_pull_requests
 
 
+def show_most_informative_features(clf, vect, n=20):
+    c_f = sorted(zip(clf.coef_[0], vect.get_feature_names()))
+    top = list(zip(c_f[:n], c_f[:-(n + 1):-1]))
+    for (c1, f1), (c2, f2) in top:
+        print("\t%.4f\t%-15s\t\t%.4f\t%-15s" % (c1, f1, c2, f2))
+
+
 # prepare database connection
 client = pymongo.MongoClient('localhost', 27017)
 db = client.msr14
@@ -55,20 +62,10 @@ class MyTfidfVectorizer(TfidfVectorizer):
         return lambda doc: filter(lambda s: not any(c.isdigit() for c in s), filter(lambda s: not '_' in s, (w for w in analyzer(doc))))
 
 vect = MyTfidfVectorizer(stop_words='english')
-X_trans = vect.fit_transform(X)
+X = vect.fit_transform(X)
 
-# train naive bayes model with K-Fold
-kf = KFold(n=len(X), n_folds=5, shuffle=True)
+# train naive bayes model
+clf = MultinomialNB()
+clf.fit(X, y)
 
-for train, test in kf:
-    X_train, X_test = X_trans[train], X_trans[test]
-    y_train, y_test = y[train], y[test]
-
-    clf = MultinomialNB()
-    clf.fit(X_train, y_train)
-
-n = 20
-coefs_feats = sorted(zip(clf.coef_[0], vect.get_feature_names()))
-top = list(zip(coefs_feats[:n], coefs_feats[:-(n + 1):-1]))
-for (c1, f1), (c2, f2) in top:
-    print("\t%.4f\t%-15s\t\t%.4f\t%-15s" % (c1, f1, c2, f2))
+show_most_informative_features(clf, vect)
