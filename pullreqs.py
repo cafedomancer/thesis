@@ -19,10 +19,10 @@ from utils import find_pull_requests
 
 
 def show_most_informative_features(clf, vect, n=20):
-    c_f = sorted(zip(clf.coef_[0], vect.get_feature_names()))
-    top = list(zip(c_f[:n], c_f[:-(n + 1):-1]))
-    for (c1, f1), (c2, f2) in top:
-        print("\t%.4f\t%-15s\t\t%.4f\t%-15s" % (c1, f1, c2, f2))
+    c_f = sorted(zip(clf.coef_[0], vect.get_feature_names()), reverse=True)
+    top = c_f[:n]
+    for c, f in top:
+        print('    {:>8.4f} {}'.format(c, f))
 
 
 # prepare database connection
@@ -72,4 +72,4 @@ for n in ngram_ranges:
     clf.fit(X_trans, y)
 
     print('  {:f} (N = {})'.format(clf.score(X_trans, y), n))
-    #show_most_informative_features(clf, vect)
+    show_most_informative_features(clf, vect)
