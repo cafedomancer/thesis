@@ -14,8 +14,8 @@ from sklearn.naive_bayes import MultinomialNB
 
 sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
-from features import clean_body
-from utils import find_pull_requests
+from features import clean_comment
+from utils import load_issue_comments
 
 
 def show_most_informative_features(clf, vect, n=20):
@@ -33,24 +33,17 @@ db = client.msr14
 full_name = 'rails/rails'
 owner, repo = full_name.split('/')
 
-# extract pull request bodies
-pullreqs = find_pull_requests(db, owner, repo, is_merged=True)
-m_bodies = [p['body'] for p in pullreqs]
+# load issue comments
+m_comments = load_issue_comments(is_merged=True)
+u_comments = load_issue_comments(is_merged=False)
 
-pullreqs = find_pull_requests(db, owner, repo, is_merged=False)
-u_bodies = [p['body'] for p in pullreqs]
-
-# remove none and empty
-m_bodies = list(filter(bool, m_bodies))
-u_bodies = list(filter(bool, u_bodies))
-
-# clean pull request bodies
-m_bodies = list(map(clean_body, m_bodies))
-u_bodies = list(map(clean_body, u_bodies))
+# clean issue comments
+m_comments = list(map(clean_comment, m_comments))
+u_comments = list(map(clean_comment, u_comments))
 
 # convert numpy arrays
-X_orig = m_bodies + u_bodies
-y_orig = list(repeat(1, len(m_bodies))) + list(repeat(0, len(u_bodies)))
+X_orig = m_comments+ u_comments
+y_orig = list(repeat(0, len(m_comments))) + list(repeat(1, len(u_comments)))
 
 X = np.asarray(X_orig)
 y = np.asarray(y_orig)
@@ -62,7 +55,7 @@ class MyTfidfVectorizer(TfidfVectorizer):
         return lambda doc: filter(lambda s: not any(c.isdigit() for c in s), filter(lambda s: not '_' in s, (w for w in analyzer(doc))))
 
 # search the best ngram range
-ngram_ranges = range(1, 8)
+ngram_ranges = range(1, 9)
 
 for n in ngram_ranges:
     vect = MyTfidfVectorizer(ngram_range=(n, n), stop_words='english')
