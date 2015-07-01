@@ -62,7 +62,7 @@ class MyTfidfVectorizer(TfidfVectorizer):
         return lambda doc: filter(lambda s: not any(c.isdigit() for c in s), filter(lambda s: not '_' in s, (w for w in analyzer(doc))))
 
 # search the best ngram range
-ngram_ranges = range(1, 17)
+ngram_ranges = range(1, 8)
 
 for n in ngram_ranges:
     vect = MyTfidfVectorizer(ngram_range=(n, n), stop_words='english')
