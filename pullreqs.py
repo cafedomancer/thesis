@@ -61,11 +61,15 @@ class MyTfidfVectorizer(TfidfVectorizer):
         analyzer = super(TfidfVectorizer, self).build_analyzer()
         return lambda doc: filter(lambda s: not any(c.isdigit() for c in s), filter(lambda s: not '_' in s, (w for w in analyzer(doc))))
 
-vect = MyTfidfVectorizer(stop_words='english')
-X = vect.fit_transform(X)
+# search the best ngram range
+ngram_ranges = range(1, 33)
 
-# train naive bayes model
-clf = MultinomialNB()
-clf.fit(X, y)
+for n in ngram_ranges:
+    vect = MyTfidfVectorizer(ngram_range=(n, n), stop_words='english')
+    X_trans = vect.fit_transform(X)
 
-show_most_informative_features(clf, vect)
+    clf = MultinomialNB()
+    clf.fit(X_trans, y)
+
+    print('  {:f} (N = {})'.format(clf.score(X_trans, y), n))
+    #show_most_informative_features(clf, vect)
